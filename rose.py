@@ -1,8 +1,8 @@
-# rose.py
+# rose.py (Final Corrected)
 
 from pyasn1.type import univ, namedtype, tag, constraint, namedval, char
 from acsespec import *
-
+print("!!!!!!!!! TEST: NEUE ROSE.PY WURDE GELADEN !!!!!!!!!")
 class CSTASecurityData(univ.Sequence):
   componentType = namedtype.NamedTypes(
     namedtype.OptionalNamedType('messageSequenceNumber',univ.Integer())
@@ -201,13 +201,22 @@ class EventInfoParts(univ.Choice):
 class EventInfo(univ.SequenceOf):
   componentType = EventInfoParts()
 
-  
+class MonitorFilter(univ.Sequence):
+  componentType = namedtype.NamedTypes(
+    namedtype.OptionalNamedType("call",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,0))),
+    namedtype.OptionalNamedType("feature",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,1))),
+    namedtype.OptionalNamedType("agent",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,2))),
+    namedtype.OptionalNamedType("maintenance",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,3))),
+    namedtype.OptionalNamedType("private",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,4)))
+    )
+
 class ArgumentSeqParts(univ.Choice):
   componentType = namedtype.NamedTypes(
     namedtype.OptionalNamedType('crossRefIdentifier',MonitorCrossRefID()),
     namedtype.OptionalNamedType('eventType',univ.Integer()),
     namedtype.OptionalNamedType('systemStatus',SystemStatus()),
     namedtype.OptionalNamedType('moniterObject',MonitorObject()),
+    namedtype.OptionalNamedType('monitorFilter',MonitorFilter()),
     namedtype.OptionalNamedType('extensions',CSTACommonArguments()),
     namedtype.OptionalNamedType('eventInfo',EventInfo()),
     namedtype.OptionalNamedType('cstaprivatedata',CSTAPrivateData())
@@ -250,23 +259,26 @@ class ErrorArgs(univ.Choice):
     namedtype.OptionalNamedType("systemStatus",univ.Integer().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,2))),
     )
 
+class MonitorStartArgs(univ.Sequence):
+  componentType=namedtype.NamedTypes(
+    namedtype.NamedType('monitorObject', MonitorObject()),
+    namedtype.NamedType('monitorFilter', MonitorFilter())
+    )
+
 def args(op=-1):
-  ret = univ.Choice(componentType=namedtype.NamedTypes(
-      namedtype.OptionalNamedType("null",univ.Null()),
-      namedtype.OptionalNamedType("ArgSeq",argumentseq(op)),
-      namedtype.OptionalNamedType("systemStatus",CSTACommonArguments()),
-      namedtype.OptionalNamedType("enum",univ.Enumerated())
-      ))
+  if op == 71:
+    ret = univ.Choice(componentType=namedtype.NamedTypes(
+        namedtype.NamedType("monitorStart", MonitorStartArgs().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)))
+    ))
+  else:
+    ret = univ.Choice(componentType=namedtype.NamedTypes(
+        namedtype.OptionalNamedType("null",univ.Null()),
+        namedtype.OptionalNamedType("ArgSeq",argumentseq(op)),
+        namedtype.OptionalNamedType("systemStatus",CSTACommonArguments()),
+        namedtype.OptionalNamedType("enum",univ.Enumerated())
+        ))
   return ret
 
-class MonitorFilter(univ.Sequence):
-  componentType = namedtype.NamedTypes(
-    namedtype.OptionalNamedType("call",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,0))),
-    namedtype.OptionalNamedType("feature",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,1))),
-    namedtype.OptionalNamedType("agent",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,2))),
-    namedtype.OptionalNamedType("maintenance",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,3))),
-    namedtype.OptionalNamedType("private",univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,tag.tagFormatSimple,4)))
-    )
 class MonitorStartResult(univ.Sequence):
   componentType = namedtype.NamedTypes(
     namedtype.OptionalNamedType('crossRefIdentifier',MonitorCrossRefID()),

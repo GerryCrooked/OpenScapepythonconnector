@@ -1,4 +1,4 @@
-# phonesystem.py
+# phonesystem.py (Final Amended)
 
 import time
 import socket
@@ -176,27 +176,32 @@ class PhoneSystem:
 
     def StartMonitor(self, ext):
         print(f"Starte Monitor für Nebenstelle: {ext}")
+        
+        # 1. Haupt-Invoke-Struktur erstellen. 
+        #    'm' enthält jetzt bereits ein leeres 'args'-Feld vom richtigen Typ.
         m = invoke(71)
         m.setComponentByName('invokeid', self.NextID())
         m.setComponentByName('opcode', 71)
         
-        # --- KORREKTER, STRUKTURIERTER AUFBAU DER NACHRICHT ---
-        arg_seq = ArgumentSeq()
+        # 2. Die Argument-Payload (MonitorStartArgs) erstellen und füllen.
+        monitor_args_payload = MonitorStartArgs()
         
-        mon_obj = CSTAObject()
+        mon_obj = MonitorObject()
         dev_id = DeviceID()
-        dev_id.setComponentByName('dialingNumber', NumberDigits(ext))
+        dev_id.setComponentByName('dialingNumber', ext)
         mon_obj.setComponentByName('device', dev_id)
+        monitor_args_payload.setComponentByName('monitorObject', mon_obj)
+
+        mon_filter = MonitorFilter()
+        mon_filter.setComponentByName('call', "'11111111'B")
+        monitor_args_payload.setComponentByName('monitorFilter', mon_filter)
+
+        # 3. Das bereits existierende 'args'-Choice-Objekt aus 'm' holen...
+        args_component = m.getComponentByName('args')
         
-        arg_parts = ArgumentSeqParts()
-        arg_parts.setComponentByName('moniterObject', mon_obj)
-        
-        arg_seq.setComponentByPosition(0, arg_parts)
-        
-        args_choice = args(71)
-        args_choice.setComponentByName('ArgSeq', arg_seq)
-        
-        m.setComponentByName('args', args_choice)
+        # 4. ... und seine 'monitorStart'-Choice mit unserer Payload setzen.
+        #    Die pyasn1-Bibliothek wendet hier das korrekte Tag an.
+        args_component.setComponentByName('monitorStart', monitor_args_payload)
         
         self.sendMess(m)
 
